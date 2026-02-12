@@ -293,6 +293,26 @@ app.post('/send/sms', async (req, res) => {
       });
     }
 
+    if (tokenDoc.error_count > 0) {
+      await tokenDocRef.update({
+        error_count: 0,
+        last_malicious_attempt: null
+      });
+    }
+
+    const tokenSnap = await db
+      .collection('api_keys')
+      .where('api_key', '==', authHeader)
+      .limit(1)
+      .get();
+
+    if (tokenSnap.empty) {
+      return res.status(403).json({
+        success: false,
+        error: 'Invalid API key'
+      });
+    }
+
     const tokenDocRef = tokenSnap.docs[0].ref;
     const tokenDoc = tokenSnap.docs[0].data();
 
@@ -300,6 +320,31 @@ app.post('/send/sms', async (req, res) => {
       return res.status(403).json({
         success: false,
         error: 'This API key has been banned due to multiple consecutive malicious messages. Please contact support.'
+      });
+    }
+
+    // Message count validation
+    const currentLimit = tokenDoc.limit || 0;
+    const MAX_LIMIT = 100;
+
+    if (currentLimit >= MAX_LIMIT) {
+      return res.status(403).json({
+        success: false,
+        error: 'Message limit reached (100/100)',
+        details: 'This API has a temporary limit of 100 messages per day. We will return to no limit when the volume goes down.',
+        current_usage: currentLimit,
+        max_allowed: MAX_LIMIT
+      });
+    }
+
+    const lastSent = tokenDoc.updated_at ? new Date(tokenDoc.updated_at) : null;
+    const now = new Date();
+
+    if (lastSent && now - lastSent < 10000) {
+      const waitTime = Math.ceil((10000 - (now - lastSent)) / 1000);
+      return res.status(429).json({
+        success: false,
+        error: `Rate limit exceeded. Try again in ${waitTime} second(s).`
       });
     }
 
@@ -353,51 +398,6 @@ app.post('/send/sms', async (req, res) => {
           max_allowed_errors: 3
         });
       }
-    }
-
-    if (tokenDoc.error_count > 0) {
-      await tokenDocRef.update({
-        error_count: 0,
-        last_malicious_attempt: null
-      });
-    }
-
-    const tokenSnap = await db
-      .collection('api_keys')
-      .where('api_key', '==', authHeader)
-      .limit(1)
-      .get();
-
-    if (tokenSnap.empty) {
-      return res.status(403).json({
-        success: false,
-        error: 'Invalid API key'
-      });
-    }
-
-    // Message count validation
-    const currentLimit = tokenDoc.limit || 0;
-    const MAX_LIMIT = 100;
-
-    if (currentLimit >= MAX_LIMIT) {
-      return res.status(403).json({
-        success: false,
-        error: 'Message limit reached (100/100)',
-        details: 'This API has a temporary limit of 100 messages per day. We will return to no limit when the volume goes down.',
-        current_usage: currentLimit,
-        max_allowed: MAX_LIMIT
-      });
-    }
-
-    const lastSent = tokenDoc.updated_at ? new Date(tokenDoc.updated_at) : null;
-    const now = new Date();
-
-    if (lastSent && now - lastSent < 10000) {
-      const waitTime = Math.ceil((10000 - (now - lastSent)) / 1000);
-      return res.status(429).json({
-        success: false,
-        error: `Rate limit exceeded. Try again in ${waitTime} second(s).`
-      });
     }
 
     const finalMessage = `From: ${tokenDoc.project_name}\n\n${message}\n\nSent via SMS API Philippines`;
