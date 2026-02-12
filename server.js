@@ -335,6 +335,20 @@ app.post('/send/sms', async (req, res) => {
       });
     }
 
+    // Message count validation
+    const currentLimit = tokenDoc.limit || 0;
+    const MAX_LIMIT = 100;
+
+    if (currentLimit >= MAX_LIMIT) {
+      return res.status(403).json({
+        success: false,
+        error: 'Message limit reached (100/100)',
+        details: 'This API has a temporary limit of 100 messages per day. We will return to no limit when the volume goes down.',
+        current_usage: currentLimit,
+        max_allowed: MAX_LIMIT
+      });
+    }
+
     const lastSent = tokenDoc.updated_at ? new Date(tokenDoc.updated_at) : null;
     const now = new Date();
 
@@ -367,14 +381,25 @@ app.post('/send/sms', async (req, res) => {
     );
 
     await tokenDocRef.update({
-      updated_at: now.toISOString()
+      updated_at: now.toISOString(),
+      limit: currentLimit + 1
     });
 
     res.json({
       success: true,
       message: 'SMS sent successfully',
       recipient: normalizedRecipient,
-      sms_response: smsResponse.data
+      sms_response: {
+        state: smsResponse.data.state,
+        isHashed: smsResponse.data.isHashed,
+        isEncrypted: smsResponse.data.isEncrypted,
+        states: smsResponse.data.states
+      },
+      usage: {
+        sent: currentLimit + 1,
+        limit: MAX_LIMIT,
+        remaining: MAX_LIMIT - (currentLimit + 1)
+      }
     });
 
   } catch (error) {
