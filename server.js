@@ -271,6 +271,38 @@ app.post('/send/sms', async (req, res) => {
       });
     }
 
+    const tokenSnap = await db
+      .collection('api_keys')
+      .where('api_key', '==', authHeader)
+      .limit(1)
+      .get();
+
+    if (tokenSnap.empty) {
+      return res.status(403).json({
+        success: false,
+        error: 'Invalid API key'
+      });
+    }
+
+    const tokenDocRef = tokenSnap.docs[0].ref;
+    const tokenDoc = tokenSnap.docs[0].data();
+
+    if (tokenDoc.is_active !== true) {
+      if (tokenDoc.ban_reason === 'Malicious messages detected') {
+        return res.status(403).json({
+          success: false,
+          error: 'This API key has been banned due to multiple consecutive malicious messages. Please contact support.',
+          ban_date: tokenDoc.ban_date,
+          error_count: tokenDoc.error_count || 0
+        });
+      }
+      
+      return res.status(403).json({
+        success: false,
+        error: 'API key is inactive'
+      });
+    }
+
     if (!recipient || !message) {
       return res.status(400).json({
         success: false,
@@ -293,37 +325,6 @@ app.post('/send/sms', async (req, res) => {
       });
     }
 
-    if (tokenDoc.error_count > 0) {
-      await tokenDocRef.update({
-        error_count: 0,
-        last_malicious_attempt: null
-      });
-    }
-
-    const tokenSnap = await db
-      .collection('api_keys')
-      .where('api_key', '==', authHeader)
-      .limit(1)
-      .get();
-
-    if (tokenSnap.empty) {
-      return res.status(403).json({
-        success: false,
-        error: 'Invalid API key'
-      });
-    }
-
-    const tokenDocRef = tokenSnap.docs[0].ref;
-    const tokenDoc = tokenSnap.docs[0].data();
-
-    if (tokenDoc.is_active !== true) {
-      return res.status(403).json({
-        success: false,
-        error: 'This API key has been banned due to multiple consecutive malicious messages. Please contact support.'
-      });
-    }
-
-    // Message count validation
     const currentLimit = tokenDoc.limit || 0;
     const MAX_LIMIT = 100;
 
@@ -348,7 +349,6 @@ app.post('/send/sms', async (req, res) => {
       });
     }
 
-    // AI Detection
     const isMalicious = await detectMaliciousMessageAI(message);
 
     console.log('AI Detection Result:', isMalicious);
@@ -368,7 +368,6 @@ app.post('/send/sms', async (req, res) => {
         last_malicious_attempt: new Date().toISOString()
       };
 
-      // Check if user reached 3 malicious attempts
       if (newErrorCount >= 3) {
         updateData.is_active = false;
         updateData.ban_reason = 'Malicious messages detected';
@@ -385,7 +384,6 @@ app.post('/send/sms', async (req, res) => {
           max_allowed_errors: 3
         });
       } else {
-        // Just increment error count, not banned yet
         await tokenDocRef.update(updateData);
         
         return res.status(400).json({
@@ -398,6 +396,13 @@ app.post('/send/sms', async (req, res) => {
           max_allowed_errors: 3
         });
       }
+    }
+
+    if (tokenDoc.error_count > 0) {
+      await tokenDocRef.update({
+        error_count: 0,
+        last_malicious_attempt: null
+      });
     }
 
     const finalMessage = `From: ${tokenDoc.project_name}\n\n${message}\n\nSent via SMS API Philippines`;
