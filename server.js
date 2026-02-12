@@ -293,6 +293,16 @@ app.post('/send/sms', async (req, res) => {
       });
     }
 
+    const tokenDocRef = tokenSnap.docs[0].ref;
+    const tokenDoc = tokenSnap.docs[0].data();
+
+    if (tokenDoc.is_active !== true) {
+      return res.status(403).json({
+        success: false,
+        error: 'This API key has been banned due to multiple consecutive malicious messages. Please contact support.'
+      });
+    }
+
     // AI Detection
     const isMalicious = await detectMaliciousMessageAI(message);
 
@@ -305,10 +315,50 @@ app.post('/send/sms', async (req, res) => {
     if (maliciousObj && maliciousObj.malicious === "true") {
       console.log("API Key", authHeader, "attempted to send a malicious message:", message);
 
-      return res.status(400).json({
-        success: false,
-        error: 'Malicious or scam message detected',
-        details: 'This message appears to be spam, scam, or malicious content'
+      const currentErrorCount = tokenDoc.error_count || 0;
+      const newErrorCount = currentErrorCount + 1;
+
+      const updateData = {
+        error_count: newErrorCount,
+        last_malicious_attempt: new Date().toISOString()
+      };
+
+      // Check if user reached 3 malicious attempts
+      if (newErrorCount >= 3) {
+        updateData.is_active = false;
+        updateData.ban_reason = 'Malicious messages detected';
+        updateData.ban_date = new Date().toISOString();
+        
+        await tokenDocRef.update(updateData);
+        
+        return res.status(403).json({
+          success: false,
+          error: 'API key has been banned',
+          details: 'Your API key has been banned due to 3 consecutive malicious messages. Please contact support.',
+          ban_date: updateData.ban_date,
+          error_count: newErrorCount,
+          max_allowed_errors: 3
+        });
+      } else {
+        // Just increment error count, not banned yet
+        await tokenDocRef.update(updateData);
+        
+        return res.status(400).json({
+          success: false,
+          error: 'Malicious or scam message detected',
+          details: 'This message appears to be spam, scam, or malicious content',
+          warning: `This is malicious attempt ${newErrorCount}/3. After 3 attempts, your API key will be banned.`,
+          attempts_remaining: 3 - newErrorCount,
+          error_count: newErrorCount,
+          max_allowed_errors: 3
+        });
+      }
+    }
+
+    if (tokenDoc.error_count > 0) {
+      await tokenDocRef.update({
+        error_count: 0,
+        last_malicious_attempt: null
       });
     }
 
@@ -322,16 +372,6 @@ app.post('/send/sms', async (req, res) => {
       return res.status(403).json({
         success: false,
         error: 'Invalid API key'
-      });
-    }
-
-    const tokenDocRef = tokenSnap.docs[0].ref;
-    const tokenDoc = tokenSnap.docs[0].data();
-
-    if (tokenDoc.is_active !== true) {
-      return res.status(403).json({
-        success: false,
-        error: 'API key is inactive'
       });
     }
 
