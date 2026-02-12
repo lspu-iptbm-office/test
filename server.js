@@ -326,13 +326,13 @@ app.post('/send/sms', async (req, res) => {
     }
 
     const currentLimit = tokenDoc.limit || 0;
-    const MAX_LIMIT = 100;
+    const MAX_LIMIT = 50;
 
     if (currentLimit >= MAX_LIMIT) {
       return res.status(403).json({
         success: false,
-        error: 'Message limit reached (100/100)',
-        details: 'This API has a temporary limit of 100 messages per day. We will return to no limit when the volume goes down.',
+        error: 'Message limit reached (50/50)',
+        details: 'This API has a temporary limit of 50 messages per day. We will return to no limit when the volume goes down.',
         current_usage: currentLimit,
         max_allowed: MAX_LIMIT
       });
