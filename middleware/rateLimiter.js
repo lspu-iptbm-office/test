@@ -10,8 +10,7 @@ const checkDailyLimit = async (req, res, next) => {
     if (currentLimit >= LIMITS.DAILY_SMS_LIMIT) {
       return res.status(403).json({
         success: false,
-        error: `Message limit reached (${LIMITS.DAILY_SMS_LIMIT}/${LIMITS.DAILY_SMS_LIMIT})`,
-        details: 'This API has a temporary limit of 50 messages per day. We will return to no limit when the volume goes down.',
+        error: `Message limit reached.`,
         current_usage: currentLimit,
         max_allowed: LIMITS.DAILY_SMS_LIMIT
       });

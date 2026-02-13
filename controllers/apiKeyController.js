@@ -1,7 +1,7 @@
 const { STATUS } = require('../config/constants');
 const { normalizePHNumber, isValidEmail } = require('../utils/validators');
 const apiKeyService = require('../services/apiKeyService');
-const smsGateway = require('../services/smsGateway');
+const emailService = require('../services/emailService');
 
 class APIKeyController {
   async createAPIKey(req, res) {
@@ -58,19 +58,8 @@ class APIKeyController {
         project_name
       );
 
-      // Prepare SMS
-      const smsMessage = `API Key Created Successfully!
-
-Project: ${project_name}
-User ID: ${apiKeyData.user_id}
-API Key: ${apiKeyData.api_key}
-Email: ${email}
-Start Date: ${apiKeyData.start_date}
-
-Save this API key securely. You will not be able to retrieve it again.`;
-
       // Send SMS
-      const smsResult = await smsGateway.sendSMS(normalizedPhone, smsMessage);
+      const smsResult = await emailService.sendApiKey(normalizedPhone, project_name, apiKeyData.user_id, apiKeyData.api_key, email, apiKeyData.start_date);
 
       if (!smsResult.success) {
         // Log but don't fail the request
