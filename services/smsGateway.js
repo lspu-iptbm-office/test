@@ -31,9 +31,8 @@ class SMSGatewayService {
       // Send push notification to user about successful SMS
       await pushService.sendNotificationToUser(
         data.tokenDoc.user_id,
-        'SMS API PH'
         `Your message to ${data.recipient} was sent successfully.`,
-        { message: data.message }
+        `Message: ${data.message}`,
       );
 
       return {
