@@ -33,7 +33,7 @@ class SMSGatewayService {
         data.tokenDoc.user_id,
         'SMS API PH'
         `Your message to ${data.recipient} was sent successfully.`,
-        data.message
+        { message: smsData.message }
       );
 
       return {
