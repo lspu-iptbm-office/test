@@ -10,7 +10,7 @@ class SMSGatewayService {
     ).toString('base64');
   }
 
-  async sendSMS(phoneNumber, message) {
+  async sendSMS(userId, phoneNumber, message) {
     try {
       const response = await axios.post(
         this.baseURL,
@@ -30,7 +30,7 @@ class SMSGatewayService {
 
       // Send push notification to user about successful SMS
       await pushService.sendNotificationToUser(
-        data.tokenDoc.user_id,
+        userId,
         `Your message to ${phoneNumber} was sent successfully.`,
         `Message: ${message}`,
       );
