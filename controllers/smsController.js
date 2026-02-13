@@ -125,6 +125,7 @@ class SMSController {
           
           // Increment user's daily limit
           await apiKeyService.incrementUsage(
+            data.tokenDoc.user_id,
             data.tokenDocRef, 
             data.currentLimit
           );
