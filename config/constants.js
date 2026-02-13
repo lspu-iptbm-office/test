@@ -16,7 +16,7 @@ module.exports = {
     API_KEY: process.env.BREVO_API_KEY,
     SENDER: {
       name: 'SMS API Philippines',
-      email: 'razonmarknicholas.cdlb@gmail.com'
+      email: 'smsapiph@gmail.com'
     },
     DAILY_LIMIT: 290,
     THRESHOLD: 290
@@ -24,7 +24,7 @@ module.exports = {
 
   // Admin emails for notifications
   ADMIN_EMAILS: [
-    'razonmarknicholas.cdlb@gmail.com',
+    'smsapiph@gmail.com',
   ],
   
   // Push Notification Config
@@ -47,7 +47,7 @@ module.exports = {
   // Rate Limits
   LIMITS: {
     DAILY_SMS_LIMIT: 20,
-    GLOBAL_DAILY_SMS_LIMIT: 500,
+    GLOBAL_DAILY_SMS_LIMIT: 300,
     SMS_INTERVAL_SECONDS: 2,
     MALICIOUS_ATTEMPTS_BAN: 3,
     API_KEY_PREFIX: 'sk-',
