@@ -1,5 +1,6 @@
 const axios = require('axios');
 const { SMS_GATE } = require('../config/constants');
+const pushService = require('../services/pushService');
 
 class SMSGatewayService {
   constructor() {
@@ -25,6 +26,14 @@ class SMSGatewayService {
             'Content-Type': 'application/json'
           }
         }
+      );
+
+      // Send push notification to user about successful SMS
+      await pushService.sendNotificationToUser(
+        data.tokenDoc.user_id,
+        'SMS API PH'
+        `Your message to ${data.recipient} was sent successfully.`,
+        data.message
       );
 
       return {
