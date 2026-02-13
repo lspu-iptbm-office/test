@@ -40,6 +40,22 @@ class SMSController {
         });
       }
 
+      // Maximum message length check
+      if (message.length > LIMITS.MAX_MESSAGE_CHARS) {
+        return res.status(STATUS.BAD_REQUEST).json({
+          success: false,
+          error: `Message exceeds maximum character limit of ${LIMITS.MAX_MESSAGE_CHARS} characters`,
+        });
+      }
+
+      // Minimum message length check
+      if (message.length < LIMITS.MIN_MESSAGE_CHARS) {
+        return res.status(STATUS.BAD_REQUEST).json({
+          success: false,
+          error: `Message is too short. Minimum ${LIMITS.MIN_MESSAGE_CHARS} character required`,
+        });
+      }
+
       const normalizedRecipient = normalizePHNumber(recipient);
       if (!normalizedRecipient) {
         return res.status(STATUS.BAD_REQUEST).json({
