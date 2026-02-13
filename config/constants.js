@@ -53,6 +53,7 @@ module.exports = {
     API_KEY_PREFIX: 'sk-',
     EMAIL_NOTIFICATION_THRESHOLD: 450,
     EMAIL_DAILY_LIMIT: 290,
+    API_KEY_REGISTRATION_DAILY_LIMIT: 50,
   },
 
   // Collections
@@ -64,7 +65,8 @@ module.exports = {
     EMAIL_LOGS: 'email_logs',
     EMAIL_COUNTERS: 'email_counters',
     PUSH_SUBSCRIPTIONS: 'push_subscriptions',
-    PUSH_NOTIFICATIONS: 'push_notifications' 
+    PUSH_NOTIFICATIONS: 'push_notifications',
+    SYSTEM_COUNTERS: 'system_counters'
   },
 
   // Status Codes
