@@ -112,6 +112,7 @@ class SMSController {
           const finalMessage = `From: ${data.tokenDoc.project_name}\n\n${data.message}\n\nSent via SMS API Philippines`;
           
           const smsResult = await smsGateway.sendSMS(
+            data.tokenDoc.user_id,
             data.recipient, 
             finalMessage
           );
@@ -125,7 +126,6 @@ class SMSController {
           
           // Increment user's daily limit
           await apiKeyService.incrementUsage(
-            data.tokenDoc.user_id,
             data.tokenDocRef, 
             data.currentLimit
           );
