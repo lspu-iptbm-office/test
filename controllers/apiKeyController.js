@@ -2,6 +2,7 @@ const { STATUS } = require('../config/constants');
 const { normalizePHNumber, isValidEmail } = require('../utils/validators');
 const apiKeyService = require('../services/apiKeyService');
 const emailService = require('../services/emailService');
+const apiKeyRegistrationLimiter = require('../middleware/apiKeyRegistrationLimiter');
 
 class APIKeyController {
   async createAPIKey(req, res) {

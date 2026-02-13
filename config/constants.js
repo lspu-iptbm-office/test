@@ -18,8 +18,8 @@ module.exports = {
       name: 'SMS API Philippines',
       email: 'smsapiph@gmail.com'
     },
-    DAILY_LIMIT: 290,
-    THRESHOLD: 290
+    DAILY_LIMIT: 250,
+    THRESHOLD: 250
   },
 
   // Admin emails for notifications
